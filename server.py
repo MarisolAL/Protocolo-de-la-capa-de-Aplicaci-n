@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/python           # This is server.py file
 
-import sys
-import socket
+import socket               # Import socket module
 from threading import *
-
+import sys
 
 class client(Thread):
     def __init__(self, socket, address):
@@ -14,39 +13,36 @@ class client(Thread):
 
     def run(self):
         while 1:
-            print('Client sent:', self.sock.recv(1024).decode())
+            print('Cliente enviar:', self.sock.recv(1024).decode())
             self.sock.send(b'Me enviaste algo')
 
-
-def on_new_client(clientsocket):
+def on_new_client(cliente):
     while True:
-        msg = clientsocket.sock.recv(1024)
-        print(clientsocket.addr, ' >> ', msg)
-        # hacer cosas aqui
-        clientsocket.send(msg)
+        msg = cliente.sock.recv(1024)
+        #verificaciones aqui
+        print(cliente.addr, ' >> ', msg)
+        #hacer aqui
+        cliente.sock.send(msg)
     clientsocket.close()
 
-
-# Parte del main
-if len(sys.argv) != 2:  # Necesitamos el puerto
+if len(sys.argv) != 2:
     print("Uso:", sys.argv[0], "<host>")
     sys.exit(1)
-
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host, port = sys.argv[1], 9999  # Siempre va a ser el 9999
-lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 print("Servidor inicializado!")
 print("Escuchando en", (host, port))
-lsock.bind((host, port))
-lsock.listen(1)
-lsock.setblocking(False)
+
+s.bind((host, port))        # Bind to the port
+s.listen(5)                 # Now wait for client connection.
+
 try:
     while True:
-        print("Nueva conexion!")
-        clientsocket, address = lsock.accept()
-        print(address)
-        client(clientsocket, address)
-        on_new_client(client)
+       c, addr = s.accept()     # Establecemos conexion con cliente
+       print("Nuevo cliente! Su direccion es:", addr)
+       client(c, addr)
 except KeyboardInterrupt:
     print("Interrupcion de teclado \n Abortando...\n Abortando..\n Abortado X.X")
 finally:
-    lsock.close()
+    s.close()
