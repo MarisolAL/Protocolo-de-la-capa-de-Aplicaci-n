@@ -5,7 +5,7 @@ from threading import *
 import sys
 from struct import *
 import base_datos as bd
-
+import random
 
 class client(Thread):
     def __init__(self, socket, address):
@@ -39,7 +39,8 @@ class client(Thread):
         codigo = mensaje[0]
         if codigo == 32:
             self.sock.close()
-            self.terminate()
+            print("Cerrando sesion del cliente: ",self.addr)
+            exit()
 
     def run(self):
         chunk = self.recibe_mensaje()
@@ -48,7 +49,7 @@ class client(Thread):
         id_usr = codigo1[1]
         if not bd.valida_usuario(id_usr) or codigo != 10:
             # Usuario invalido
-            mensaje = pack("b", 11)  # Mensaje de error
+            mensaje = pack("b", 41)  # Mensaje de error
             self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
             self.sock.close()
 
@@ -61,11 +62,28 @@ class client(Thread):
         mensaje_pok = pack("bb%ds" % len(mensaje_pok), 20, len(mensaje_pok), bytes(mensaje_pok, 'utf-8'))
         self.envia_mensaje(mensaje_pok)
         #En este punto necesitamos la respuesta del cliente
-
-
-
-
-
+        recibido = self.recibe_mensaje()
+        self.cierra_sesion(recibido) #Revisamos si tenemos que cerrar la sesion
+        #En caso afirmativo esto ya no se va a ejecutar
+        if not recibido[0] == 30:
+            #Si no quiere capturarlo cerramos la sesion (aplica si recibimos un mensaje raro)
+            self.cierra_sesion([32])
+        intentos = 10 #Damos 10 intentos por default
+        capturado = False
+        while recibido[0] == 30 and intentos > 0 and  (not capturado):
+            intentos -= 1
+            capturado = random.choice([True, False])
+            if capturado:
+                #TODO Enviar imagen y codigo
+                self.envia_mensaje(pack('b',22))
+                #TODO Agregar insersion en base de datos
+                print("22")
+                self.cierra_sesion([32])
+            else:
+                #Enviamos el codigo 21 y los intentos restantes
+                self.envia_mensaje(pack('bb', 21, intentos))
+                print("21")
+            recibido = self.recibe_mensaje()
 ###Main
 if len(sys.argv) != 2:
     print("Uso:", sys.argv[0], "<host>")

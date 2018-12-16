@@ -41,6 +41,7 @@ def recibe_mensaje(sock):
         break
 
 def termina_sesion(sock):
+    print("Terminando sesion")
     envia_mensaje(sock, pack('b', 32))  # Enviamos mensaje de termino de sesion
     sock.close()
     exit()
@@ -60,7 +61,7 @@ try:
     chunk = recibe_mensaje(sock)
     codigo = chunk[0]
     #En este punto el codigo puede ser 11 o 20
-    if codigo == 11:
+    if codigo == 41:
         print("El ID ingresado es invalido, intente con otro please")
         termina_sesion(sock)
     if not codigo == 20:
@@ -74,8 +75,29 @@ try:
     print("Gusta capturar al pokemon %s?"%nombre_pokemon)
     text = input("[si/No]")
     if text != "si":
-        print("Terminando sesion")
         termina_sesion(sock)
+
+    puedo_intentar = True
+    envia_mensaje(sock, pack('b', 30))  # Enviamos que si queremos intentar capturarlo
+    mensaje = recibe_mensaje(sock)
+    while puedo_intentar:
+        if mensaje[0] == 21:
+            #No lo atrapamos por lo que imprimimos los intentos restantes
+            intentos_restantes = mensaje[1]
+            print("¿Intentar captura de nuevo? Quedan %d intentos."%intentos_restantes)
+            text = input("[si/No]")
+            if text != "si":
+                termina_sesion(sock)
+            envia_mensaje(sock, pack('b', 30)) #Enviamos que queremos intentar nuevamente
+        elif mensaje[0] == 22:
+            # TODO Lo atrapamos, hacer movidas aqui para leer imagen
+            print("Felicidades, has atrapado a %s"%nombre_pokemon)
+            puedo_intentar = False
+        else:
+             puedo_intentar = False
+             print("Ha ocurrido un error, intenta de nuevo por favor")
+             termina_sesion(sock)
+        mensaje = recibe_mensaje(sock)
 
 
 except KeyboardInterrupt:
