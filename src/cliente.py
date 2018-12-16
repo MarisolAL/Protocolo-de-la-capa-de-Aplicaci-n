@@ -40,8 +40,8 @@ def lee_imagen(mensaje):
     image.show()
 
 
-if len(sys.argv) != 4:
-    print("usage:", sys.argv[0], "<host> <puerto> <Id de usuario>")
+if len(sys.argv) < 4:
+    print("usage:", sys.argv[0], "<host> <puerto> <Id de usuario> <'pokedex'> \n El ultimo argumento es por si se desea consultar la pokedex actual del usuario")
     sys.exit(1)
 if not es_entero(sys.argv[3]):
     print("El id debe ser un entero")
@@ -52,16 +52,27 @@ if not es_entero(sys.argv[2]):
 host, port, id_usuario = sys.argv[1:4]
 id_usuario = int(id_usuario)
 
+
+
 server_addr = (host, int(port))
 print("Inicializando la conexion en ", server_addr)
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 sock.connect_ex(server_addr)
+if len(sys.argv) ==  5:
+    if sys.argv[4].lower()== "pokedex":
+        #Queremos la pokedex
+        envia_mensaje(sock, pack('bb', 43, id_usuario)) #Codigo que pide la pokedex
+        mensaje = recibe_mensaje(sock)
+        if mensaje[0] == 44:
+            longitud_string = mensaje[1]
+            pokedex = unpack('%ds'%longitud_string ,mensaje[2:])[0].decode("utf-8")
+            print("Tu pokedex es la siguiente: ")
+            print(pokedex)
+        exit()
+
 try:
-    MSGLEN = 1024
-    totalsent = 0
     #Comenzamos con el mensaje inicial con el codigo 10 y el id
-    msg = pack('bi',10,id_usuario)
+    msg = pack('bb',10,id_usuario)
     envia_mensaje(sock,msg)
     chunk = recibe_mensaje(sock)
     codigo = chunk[0]

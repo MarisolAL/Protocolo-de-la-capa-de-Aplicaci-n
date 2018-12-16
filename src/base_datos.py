@@ -65,3 +65,12 @@ def obten_pokemon_random():
     conn.close()  # Cerramos la conexion
     id = random.randint(0, total)
     return id, get_nombre_y_ruta(id)
+
+def obten_pokedex(id_usuario):
+    conn = sqlite3.connect('pokemon.db')
+    c = conn.cursor()
+    lista_pok = "\n"
+    for row in c.execute("select nombre from pokemon inner join tiene_pok on id_pokemon = id where id_usuario = " + str(id_usuario)):
+        lista_pok += str(row[0]) + "\n"
+    conn.close()  # Cerramos la conexion
+    return lista_pok

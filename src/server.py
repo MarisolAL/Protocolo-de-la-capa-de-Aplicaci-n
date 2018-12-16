@@ -51,15 +51,24 @@ class client(Thread):
     # el cliente
     def run(self):
         mensaje = self.recibe_mensaje()
-        mensaje = unpack('bi', mensaje)
+        mensaje = unpack('bb', mensaje)
         codigo = mensaje[0]
         id_usr = mensaje[1]
-        if not bd.valida_usuario(id_usr) or codigo != 10:
+        if not bd.valida_usuario(id_usr):
             # Usuario invalido
             mensaje = pack("b", 41)  # Mensaje de error
             self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
             self.sock.close()
-
+        if codigo == 43:
+            #Pedimos pokedex
+            pokedex = bd.obten_pokedex(id_usr)
+            #Enviamos mensaje con pokedex
+            self.envia_mensaje(pack("bb%ds" % len(pokedex), 44, len(pokedex), bytes(pokedex, 'utf-8')))
+            self.cierra_sesion([32])
+        if codigo != 10:
+            mensaje = pack("b", 42)  # Mensaje de error
+            self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
+            self.cierra_sesion([32])
         id_pok, (nombre, ruta) = bd.obten_pokemon_random()
         # Creamos el struct para enviar el codigo y el mensaje con el nombre de pokemon
         mensaje_pok = nombre
@@ -103,7 +112,7 @@ if len(sys.argv) != 3:
     print("Uso:", sys.argv[0], "<host> <puerto>")
     sys.exit(1)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host, port = sys.argv[1], sys.argv[2]  # Siempre va a ser el 9999
+host, port = sys.argv[1], int(sys.argv[2])  # Siempre va a ser el 9999
 
 print("Servidor inicializado!")
 print("Escuchando en", (host, port))
