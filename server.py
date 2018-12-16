@@ -42,6 +42,16 @@ class client(Thread):
             print("Cerrando sesion del cliente: ",self.addr)
             exit()
 
+    def enviar_imagen(self,ruta):
+        imagen = open(ruta, 'rb')
+        imagen_en_bytes = imagen.read()
+        long = len(imagen_en_bytes)
+        # Enviamos el mensaje con un byte que representa el codigo 22
+        # 4 bytes que representan el tama;o de la imagen
+        # y el codigo de la imagen
+        mensaje = pack('bi%ds' %long, 22,long,imagen_en_bytes)
+        self.envia_mensaje(mensaje)
+
     def run(self):
         chunk = self.recibe_mensaje()
         codigo1 = unpack('bi', chunk)
@@ -75,7 +85,7 @@ class client(Thread):
             capturado = random.choice([True, False])
             if capturado:
                 #TODO Enviar imagen y codigo
-                self.envia_mensaje(pack('b',22))
+                self.enviar_imagen(ruta)
                 #Agregamos a la pokedex del usuario
                 bd.agrega_pokemon_a_pokedex(id_pok,id_usr)
                 self.cierra_sesion([32])

@@ -2,7 +2,6 @@ import sqlite3
 import random
 
 
-
 # Funcion que dado un id de usuario verifica si esta registrado en la base
 def valida_usuario(id):
     conn = sqlite3.connect('pokemon.db')
@@ -45,7 +44,8 @@ def agrega_pokemon_a_pokedex(pokemon, usuario):
     conn.commit()  # Guardar los cambios
     conn.close()  # Cerramos la conexion
 
-#Funcion que obtiene el nombre y ruta de un pokemon aleatorio
+
+# Funcion que obtiene el nombre y ruta de un pokemon aleatorio
 def obten_pokemon_random():
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
@@ -55,12 +55,8 @@ def obten_pokemon_random():
         print("Oh, ha ocurrido un error D:")
         conn.close()  # Cerramos la conexion
         return None
-
     for row in c.execute("Select count(id) from pokemon"):
         total = int(row[0])
     conn.close()  # Cerramos la conexion
     id = random.randint(0, total)
-    return id , get_nombre_y_ruta(id)
-
-
-
+    return id, get_nombre_y_ruta(id)

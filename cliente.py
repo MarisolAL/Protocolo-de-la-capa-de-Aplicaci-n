@@ -92,6 +92,7 @@ try:
         elif mensaje[0] == 22:
             # TODO Lo atrapamos, hacer movidas aqui para leer imagen
             print("Felicidades, has atrapado a %s"%nombre_pokemon)
+            print(mensaje)
             puedo_intentar = False
         elif mensaje[0] == 23:
             print("Se han terminado tus intentos :/")
