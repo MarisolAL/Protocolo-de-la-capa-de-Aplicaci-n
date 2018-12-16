@@ -40,9 +40,14 @@ def get_nombre_y_ruta(id):
 def agrega_pokemon_a_pokedex(pokemon, usuario):
     conn = sqlite3.connect('pokemon.db')
     c = conn.cursor()
-    c.execute("INSERT INTO tiene_pok VALUES (" + str(usuario) + "," + str(pokemon) + ")")
-    conn.commit()  # Guardar los cambios
-    conn.close()  # Cerramos la conexion
+    try:
+        c.execute("INSERT INTO tiene_pok VALUES (" + str(usuario) + "," + str(pokemon) + ")")
+    except sqlite3.Error as e:
+        #Si el usuario ya tenia ese pokemon hacemos como que lo agregamos
+        print("Este usuario ya tenia ese pokemon")
+    finally:
+        conn.commit()  # Guardar los cambios
+        conn.close()  # Cerramos la conexion
 
 
 # Funcion que obtiene el nombre y ruta de un pokemon aleatorio
