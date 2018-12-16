@@ -13,18 +13,22 @@ class client(Thread):
 
     def run(self):
         while 1:
+            MSGLEN = 1024
+            chunks = []
+            bytes_recd = 0
+            while bytes_recd < MSGLEN:
+                chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
+                if chunk == b'':
+                    raise RuntimeError("socket connection broken")
+                chunks.append(chunk)
+                bytes_recd = bytes_recd + len(chunk)
+            print(b''.join(chunks))
+            #hacer cosas aqui y verificaciones
             print('Cliente enviar:', self.sock.recv(1024).decode())
             self.sock.send(b'Me enviaste algo')
 
-def on_new_client(cliente):
-    while True:
-        msg = cliente.sock.recv(1024)
-        #verificaciones aqui
-        print(cliente.addr, ' >> ', msg)
-        #hacer aqui
-        cliente.sock.send(msg)
-    clientsocket.close()
 
+###Main
 if len(sys.argv) != 2:
     print("Uso:", sys.argv[0], "<host>")
     sys.exit(1)
