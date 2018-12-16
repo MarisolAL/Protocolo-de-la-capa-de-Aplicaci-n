@@ -60,7 +60,7 @@ def obten_pokemon_random():
         total = int(row[0])
     conn.close()  # Cerramos la conexion
     id = random.randint(0, total)
-    return get_nombre_y_ruta(id)
+    return id , get_nombre_y_ruta(id)
 
 
 

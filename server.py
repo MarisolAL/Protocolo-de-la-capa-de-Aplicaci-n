@@ -53,7 +53,7 @@ class client(Thread):
             self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
             self.sock.close()
 
-        nombre, ruta = bd.obten_pokemon_random()
+        id_pok, (nombre, ruta) = bd.obten_pokemon_random()
         # Creamos el struct para enviar el codigo y el mensaje con el nombre de pokemon
         mensaje_pok = nombre
         # Para este mensaje tenemos un byte para el codigo y un byte para la longitud del string
@@ -76,14 +76,20 @@ class client(Thread):
             if capturado:
                 #TODO Enviar imagen y codigo
                 self.envia_mensaje(pack('b',22))
-                #TODO Agregar insersion en base de datos
-                print("22")
+                #Agregamos a la pokedex del usuario
+                bd.agrega_pokemon_a_pokedex(id_pok,id_usr)
+                self.cierra_sesion([32])
+            elif intentos == 0:
+                self.envia_mensaje(pack('b', 23))
                 self.cierra_sesion([32])
             else:
                 #Enviamos el codigo 21 y los intentos restantes
                 self.envia_mensaje(pack('bb', 21, intentos))
-                print("21")
             recibido = self.recibe_mensaje()
+        #Esta parte del codigo no deberia ejecutarse pero puede ocurrir un error raro
+        mensaje = pack("b", 42)  # Mensaje de error
+        self.envia_mensaje(mensaje)
+        self.cierra_sesion([32])
 ###Main
 if len(sys.argv) != 2:
     print("Uso:", sys.argv[0], "<host>")

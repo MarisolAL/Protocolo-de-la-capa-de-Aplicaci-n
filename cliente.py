@@ -93,6 +93,12 @@ try:
             # TODO Lo atrapamos, hacer movidas aqui para leer imagen
             print("Felicidades, has atrapado a %s"%nombre_pokemon)
             puedo_intentar = False
+        elif mensaje[0] == 23:
+            print("Se han terminado tus intentos :/")
+            termina_sesion(sock)
+        elif mensaje[0] == 42:
+            print("Ha ocurrido un error u.u intenta de nuevo")
+            termina_sesion(sock)
         else:
              puedo_intentar = False
              print("Ha ocurrido un error, intenta de nuevo por favor")
