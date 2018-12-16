@@ -1,8 +1,11 @@
 #!/usr/bin/python           # This is server.py file
 
-import socket               # Import socket module
+import socket  # Import socket module
 from threading import *
 import sys
+from struct import *
+import base_datos as bd
+
 
 class client(Thread):
     def __init__(self, socket, address):
@@ -11,21 +14,55 @@ class client(Thread):
         self.addr = address
         self.start()
 
+    def envia_mensaje(self, mensaje):
+        MSGLEN = 1024
+        totalsent = 0
+        while totalsent < MSGLEN:
+            sent = self.sock.send(mensaje[totalsent:])
+            print("enviado")
+            print(mensaje)
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            totalsent = totalsent + sent
+            break
+
+    def recibe_mensaje(self):
+        MSGLEN = 1024
+        # Esperamos la respuesta del servidor
+        respuesta = False
+        while not respuesta:
+            chunk = self.sock.recv(min(MSGLEN - 0, 2048))
+            if chunk != None:
+                respuesta = True
+        return chunk
+
     def run(self):
         while 1:
             MSGLEN = 1024
             chunks = []
             bytes_recd = 0
-            while bytes_recd < MSGLEN:
-                chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
-                if chunk == b'':
-                    raise RuntimeError("socket connection broken")
-                chunks.append(chunk)
-                bytes_recd = bytes_recd + len(chunk)
-            print(b''.join(chunks))
-            #hacer cosas aqui y verificaciones
-            print('Cliente enviar:', self.sock.recv(1024).decode())
-            self.sock.send(b'Me enviaste algo')
+            chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
+            codigo1 = unpack('hi', chunk)
+            codigo = codigo1[0]
+            id_usr = codigo1[1]
+            if not bd.valida_usuario(id_usr) or codigo != 10:
+                # Usuario invalido
+                mensaje = pack("b", 11)  # Mensaje de error
+                self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
+                self.sock.close()
+                break
+            nombre, ruta = bd.obten_pokemon_random()
+            # Creamos el struct para enviar el codigo y el mensaje con el nombre de pokemon
+            mensaje_pok = nombre
+            # Para este mensaje tenemos un byte para el codigo y un byte para la longitud del string
+            # utilizando el tipo signed char, de esta manera mensaje_pok[0] es el codigo y
+            # mensaje_pok[1] es la longitud del mensaje enviado
+            mensaje_pok = pack("bb%ds" % len(mensaje_pok), 20, len(mensaje_pok), bytes(mensaje_pok, 'utf-8'))
+
+            print(mensaje_pok)
+            self.envia_mensaje(mensaje_pok)
+
+
 
 
 ###Main
@@ -38,14 +75,14 @@ host, port = sys.argv[1], 9999  # Siempre va a ser el 9999
 print("Servidor inicializado!")
 print("Escuchando en", (host, port))
 
-s.bind((host, port))        # Bind to the port
-s.listen(5)                 # Now wait for client connection.
+s.bind((host, port))  # Bind to the port
+s.listen(5)  # Now wait for client connection.
 
 try:
     while True:
-       c, addr = s.accept()     # Establecemos conexion con cliente
-       print("Nuevo cliente! Su direccion es:", addr)
-       client(c, addr)
+        c, addr = s.accept()  # Establecemos conexion con cliente
+        print("Nuevo cliente! Su direccion es:", addr)
+        client(c, addr)
 except KeyboardInterrupt:
     print("Interrupcion de teclado \n Abortando...\n Abortando..\n Abortado X.X")
 finally:
