@@ -1,11 +1,10 @@
-#!/usr/bin/python           # This is server.py file
-
-import socket  # Import socket module
+import socket
 from threading import *
 import sys
 from struct import *
 import base_datos as bd
 import random
+
 
 class client(Thread):
     def __init__(self, socket, address):
@@ -14,49 +13,47 @@ class client(Thread):
         self.addr = address
         self.start()
 
-    def envia_mensaje(self, mensaje):
-        MSGLEN = 1024
+    def envia_mensaje(self, mensaje, MSGLEN=1024):
         totalsent = 0
         while totalsent < MSGLEN:
             sent = self.sock.send(mensaje[totalsent:])
             if sent == 0:
                 raise RuntimeError("socket connection broken")
-            totalsent = totalsent + sent
             break
 
     def recibe_mensaje(self):
         MSGLEN = 1024
-        # Esperamos la respuesta del cliente
-        respuesta = False
-        while not respuesta:
-            chunk = self.sock.recv(min(MSGLEN - 0, 2048))
-            if chunk != None:
-                respuesta = True
-        return chunk
+        return self.sock.recv(min(MSGLEN - 0, 2048))
 
-    #Cierra la sesion solo si el codigo es 32
-    def cierra_sesion(self,mensaje):
+
+    # Cierra la sesion solo si el codigo es 32
+    def cierra_sesion(self, mensaje):
         codigo = mensaje[0]
         if codigo == 32:
             self.sock.close()
-            print("Cerrando sesion del cliente: ",self.addr)
+            print("Cerrando sesion del cliente: ", self.addr)
             exit()
 
-    def enviar_imagen(self,ruta):
+    #Funcion que se encarga de obtener la imagen de
+    #la ruta descrita en la base de datos para posteriormente
+    # estructurar el mensaje
+    def enviar_imagen(self, ruta):
         imagen = open(ruta, 'rb')
         imagen_en_bytes = imagen.read()
         long = len(imagen_en_bytes)
         # Enviamos el mensaje con un byte que representa el codigo 22
         # 4 bytes que representan el tama;o de la imagen
         # y el codigo de la imagen
-        mensaje = pack('bi%ds' %long, 22,long,imagen_en_bytes)
-        self.envia_mensaje(mensaje)
+        mensaje = pack('bI%ds' % long, 22, long, imagen_en_bytes)
+        self.envia_mensaje(mensaje, long)
 
+    # Esta funcion se ejecuta por cada cliente, se encarga de manejar toda la interaccion con
+    # el cliente
     def run(self):
-        chunk = self.recibe_mensaje()
-        codigo1 = unpack('bi', chunk)
-        codigo = codigo1[0]
-        id_usr = codigo1[1]
+        mensaje = self.recibe_mensaje()
+        mensaje = unpack('bi', mensaje)
+        codigo = mensaje[0]
+        id_usr = mensaje[1]
         if not bd.valida_usuario(id_usr) or codigo != 10:
             # Usuario invalido
             mensaje = pack("b", 41)  # Mensaje de error
@@ -71,41 +68,42 @@ class client(Thread):
         # mensaje_pok[1] es la longitud del mensaje enviado
         mensaje_pok = pack("bb%ds" % len(mensaje_pok), 20, len(mensaje_pok), bytes(mensaje_pok, 'utf-8'))
         self.envia_mensaje(mensaje_pok)
-        #En este punto necesitamos la respuesta del cliente
+        # En este punto necesitamos la respuesta del cliente
         recibido = self.recibe_mensaje()
-        self.cierra_sesion(recibido) #Revisamos si tenemos que cerrar la sesion
-        #En caso afirmativo esto ya no se va a ejecutar
+        self.cierra_sesion(recibido)  # Revisamos si tenemos que cerrar la sesion
+        # En caso afirmativo esto ya no se va a ejecutar
         if not recibido[0] == 30:
-            #Si no quiere capturarlo cerramos la sesion (aplica si recibimos un mensaje raro)
+            # Si no quiere capturarlo cerramos la sesion (aplica si recibimos un mensaje raro)
             self.cierra_sesion([32])
-        intentos = 10 #Damos 10 intentos por default
+        intentos = 10  # Damos 10 intentos por default
         capturado = False
-        while recibido[0] == 30 and intentos > 0 and  (not capturado):
+        while recibido[0] == 30 and intentos > 0 and (not capturado):
             intentos -= 1
             capturado = random.choice([True, False])
             if capturado:
-                #TODO Enviar imagen y codigo
                 self.enviar_imagen(ruta)
-                #Agregamos a la pokedex del usuario
-                bd.agrega_pokemon_a_pokedex(id_pok,id_usr)
+                # Agregamos a la pokedex del usuario
+                bd.agrega_pokemon_a_pokedex(id_pok, id_usr)
                 self.cierra_sesion([32])
             elif intentos == 0:
                 self.envia_mensaje(pack('b', 23))
                 self.cierra_sesion([32])
             else:
-                #Enviamos el codigo 21 y los intentos restantes
+                # Enviamos el codigo 21 y los intentos restantes
                 self.envia_mensaje(pack('bb', 21, intentos))
             recibido = self.recibe_mensaje()
-        #Esta parte del codigo no deberia ejecutarse pero puede ocurrir un error raro
+        # Esta parte del codigo no deberia ejecutarse pero puede ocurrir un error raro
         mensaje = pack("b", 42)  # Mensaje de error
         self.envia_mensaje(mensaje)
         self.cierra_sesion([32])
+
+
 ###Main
-if len(sys.argv) != 2:
-    print("Uso:", sys.argv[0], "<host>")
+if len(sys.argv) != 3:
+    print("Uso:", sys.argv[0], "<host> <puerto>")
     sys.exit(1)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host, port = sys.argv[1], 9999  # Siempre va a ser el 9999
+host, port = sys.argv[1], sys.argv[2]  # Siempre va a ser el 9999
 
 print("Servidor inicializado!")
 print("Escuchando en", (host, port))
