@@ -55,7 +55,7 @@ try:
     MSGLEN = 1024
     totalsent = 0
     #Comenzamos con el mensaje inicial con el codigo 10 y el id
-    msg = pack('hi',10,id_usuario)
+    msg = pack('bi',10,id_usuario)
     envia_mensaje(sock,msg)
     chunk = recibe_mensaje(sock)
     codigo = chunk[0]
@@ -76,7 +76,7 @@ try:
     if text != "si":
         print("Terminando sesion")
         termina_sesion(sock)
-    print("Tienes 10 intentos")
+
 
 except KeyboardInterrupt:
     print("Interrupcion de teclado \n Abortando...\n Abortando..\n Abortado X.X")

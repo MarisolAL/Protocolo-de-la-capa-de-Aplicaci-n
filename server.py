@@ -19,8 +19,6 @@ class client(Thread):
         totalsent = 0
         while totalsent < MSGLEN:
             sent = self.sock.send(mensaje[totalsent:])
-            print("enviado")
-            print(mensaje)
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent = totalsent + sent
@@ -28,7 +26,7 @@ class client(Thread):
 
     def recibe_mensaje(self):
         MSGLEN = 1024
-        # Esperamos la respuesta del servidor
+        # Esperamos la respuesta del cliente
         respuesta = False
         while not respuesta:
             chunk = self.sock.recv(min(MSGLEN - 0, 2048))
@@ -36,31 +34,34 @@ class client(Thread):
                 respuesta = True
         return chunk
 
-    def run(self):
-        while 1:
-            MSGLEN = 1024
-            chunks = []
-            bytes_recd = 0
-            chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
-            codigo1 = unpack('hi', chunk)
-            codigo = codigo1[0]
-            id_usr = codigo1[1]
-            if not bd.valida_usuario(id_usr) or codigo != 10:
-                # Usuario invalido
-                mensaje = pack("b", 11)  # Mensaje de error
-                self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
-                self.sock.close()
-                break
-            nombre, ruta = bd.obten_pokemon_random()
-            # Creamos el struct para enviar el codigo y el mensaje con el nombre de pokemon
-            mensaje_pok = nombre
-            # Para este mensaje tenemos un byte para el codigo y un byte para la longitud del string
-            # utilizando el tipo signed char, de esta manera mensaje_pok[0] es el codigo y
-            # mensaje_pok[1] es la longitud del mensaje enviado
-            mensaje_pok = pack("bb%ds" % len(mensaje_pok), 20, len(mensaje_pok), bytes(mensaje_pok, 'utf-8'))
+    #Cierra la sesion solo si el codigo es 32
+    def cierra_sesion(self,mensaje):
+        codigo = mensaje[0]
+        if codigo == 32:
+            self.sock.close()
+            self.terminate()
 
-            print(mensaje_pok)
-            self.envia_mensaje(mensaje_pok)
+    def run(self):
+        chunk = self.recibe_mensaje()
+        codigo1 = unpack('bi', chunk)
+        codigo = codigo1[0]
+        id_usr = codigo1[1]
+        if not bd.valida_usuario(id_usr) or codigo != 10:
+            # Usuario invalido
+            mensaje = pack("b", 11)  # Mensaje de error
+            self.envia_mensaje(mensaje)  # Enviamos el mensaje de error
+            self.sock.close()
+
+        nombre, ruta = bd.obten_pokemon_random()
+        # Creamos el struct para enviar el codigo y el mensaje con el nombre de pokemon
+        mensaje_pok = nombre
+        # Para este mensaje tenemos un byte para el codigo y un byte para la longitud del string
+        # utilizando el tipo signed char, de esta manera mensaje_pok[0] es el codigo y
+        # mensaje_pok[1] es la longitud del mensaje enviado
+        mensaje_pok = pack("bb%ds" % len(mensaje_pok), 20, len(mensaje_pok), bytes(mensaje_pok, 'utf-8'))
+        self.envia_mensaje(mensaje_pok)
+        #En este punto necesitamos la respuesta del cliente
+
 
 
 
