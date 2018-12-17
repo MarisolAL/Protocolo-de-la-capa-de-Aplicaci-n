@@ -7,6 +7,13 @@ from PIL import Image
 import io
 
 def es_entero(s):
+    '''
+    Funcion de verificacion que nos dice si s es un
+    entero al hacer el cast
+    :param s: str
+        String que queremos verificar
+    :return: True si en efecto se trata de un entero, False en otro caso
+    '''
     try:
         int(s)
         return True
@@ -14,6 +21,12 @@ def es_entero(s):
         return False
 
 def envia_mensaje(sock, mensaje):
+    '''
+    Funcion que se encarga de enviar el mensaje a traves del socket
+    :param sock: Socket a traves del cual mandaremos el mensaje
+    :param mensaje: Mensaje que queremos mandar ya codificado
+    :return: void
+    '''
     MSGLEN = 1024
     totalsent = 0
     while totalsent < MSGLEN:
@@ -24,16 +37,35 @@ def envia_mensaje(sock, mensaje):
         break
 
 def recibe_mensaje(sock,MSGLEN = 1024):
+    '''
+    Funcion que se encarga de la recepcion de mensajes
+    :param sock: socket que recibira el mensaje
+    :param MSGLEN: Tama;o del buffer sobre el que leeremps
+    :return: El mensaje obtenido del socket
+    '''
     return sock.recv(MSGLEN)
 
 
 def termina_sesion(sock):
+    '''
+    Funcion que se encarga de enviar un mensaje de fin de sesion al
+    servidor y posteriormente terminar con la ejecucion del programa
+    :param sock: Socket que enviara el mensaje y que terminara su sesion
+    :return: void
+    '''
     print("Terminando sesion")
     envia_mensaje(sock, pack('b', 32))  # Enviamos mensaje de termino de sesion
     sock.close()
     exit()
 
 def lee_imagen(mensaje):
+    '''
+    Funcion que se encarga de decodificar una imagen
+    recibida en un mensaje codificado y posteriormente desplegar
+    la imagen
+    :param mensaje: Mensaje a decodificar
+    :return: void
+    '''
     (i,), mensaje = unpack("I", mensaje[:4]), mensaje[4:]
     (i,), imagen = unpack("I", mensaje[:4]), mensaje[4:]
     image = Image.open(io.BytesIO(imagen))

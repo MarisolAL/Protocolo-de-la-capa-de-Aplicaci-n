@@ -7,37 +7,69 @@ import random
 
 
 class client(Thread):
+    '''
+    Clase que modela clientes usando Threads
+    '''
     def __init__(self, socket, address):
+        '''
+        Constructor de la clase cliente
+        :param socket: socket creado para el cliente
+        :param address: Direccion del cliente (ip,puerto)
+        '''
         Thread.__init__(self)
         self.sock = socket
         self.addr = address
         self.start()
 
     def envia_mensaje(self, mensaje, MSGLEN=1024):
+        '''
+        Funcion que envia un mensaje
+        :param mensaje: Mensaje que vamos a enviar
+        :param MSGLEN: Tama;o del buffer para enviar el mensaje
+        :return: void
+        :raise :RuntimeError en caso de que la conexion con el socket se pierda
+        '''
         totalsent = 0
         while totalsent < MSGLEN:
             sent = self.sock.send(mensaje[totalsent:])
             if sent == 0:
-                raise RuntimeError("socket connection broken")
+                raise RuntimeError("Se ha roto la conexion con el socket")
             break
 
     def recibe_mensaje(self):
+        '''
+        Funcion que se encarga de recibir un mensaje del
+        socket del cliente
+        :return: str
+            mensaje recibido y codificado
+        '''
         MSGLEN = 1024
         return self.sock.recv(min(MSGLEN - 0, 2048))
 
 
-    # Cierra la sesion solo si el codigo es 32
     def cierra_sesion(self, mensaje):
+        '''
+        Funcion que se encarga de cerrar la sesion si y solo si
+        mensaje[0] es 32 (el codigo para cerrar sesion)
+        Si se cierra la sesion el socket se cierra y se mata el hilo.
+        :param mensaje: Mensaje codificado
+        :return: void
+        '''
         codigo = mensaje[0]
         if codigo == 32:
             self.sock.close()
             print("Cerrando sesion del cliente: ", self.addr)
             exit()
 
-    #Funcion que se encarga de obtener la imagen de
-    #la ruta descrita en la base de datos para posteriormente
-    # estructurar el mensaje
     def enviar_imagen(self, ruta):
+        '''
+        Funcion que se encarga de obtener la imagen de
+        la ruta descrita en la base de datos para posteriormente
+        estructurar el mensaje
+        :param ruta: str
+            String que nos dice donde esta la imagen solicitada
+        :return: void
+        '''
         imagen = open(ruta, 'rb')
         imagen_en_bytes = imagen.read()
         long = len(imagen_en_bytes)
@@ -47,9 +79,12 @@ class client(Thread):
         mensaje = pack('bI%ds' % long, 22, long, imagen_en_bytes)
         self.envia_mensaje(mensaje, long)
 
-    # Esta funcion se ejecuta por cada cliente, se encarga de manejar toda la interaccion con
-    # el cliente
     def run(self):
+        '''
+        Esta funcion se ejecuta por cada cliente, se encarga de manejar toda la interaccion con
+        el servidor
+        :return: void
+        '''
         mensaje = self.recibe_mensaje()
         mensaje = unpack('bb', mensaje)
         codigo = mensaje[0]
