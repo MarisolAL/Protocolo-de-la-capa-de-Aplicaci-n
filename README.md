@@ -1,6 +1,6 @@
-**Proyecto de creacion e implementacion de un protocolo de la 
+** Proyecto de creacion e implementacion de un protocolo de la 
 capa de aplicacion. **
-
-*Marisol Amezcua Lopez*
+Autor:
+* Marisol Amezcua Lopez *
 
 
