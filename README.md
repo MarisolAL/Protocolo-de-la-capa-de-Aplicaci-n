@@ -1,7 +1,6 @@
-**Proyecto de creacion e implementacion de un protocolo de la 
-capa de aplicacion. **
+**Proyecto de creación e implementación de un protocolo de la 
+capa de aplicación.**
 
 Autor:
-*Marisol Amezcua Lopez 
 
-
+* Marisol Amézcua López 
